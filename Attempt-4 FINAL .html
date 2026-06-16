@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Презентация: Цифровые Графические Объекты</title>
+    <style>
+        :root {
+            --bg-glow-1: #0f172a;
+            --bg-glow-2: #1e1b4b;
+            --bg-glow-3: #2e1065;
+            --panel-bg: rgba(15, 23, 42, 0.55);
+            --panel-border: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc;
+            --text-muted: #cbd5e1;
+            
+            --accent-vector: #00f2ff;
+            --accent-raster: #ff0055;
+            --accent-3d: #00ff66;
+            --accent-tools: #7000ff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(125deg, var(--bg-glow-1), var(--bg-glow-2), var(--bg-glow-3), var(--bg-glow-1));
+            background-size: 400% 400%;
+            animation: gradient-wave 18s ease infinite;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        @keyframes gradient-wave {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-particles {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: linear-gradient(45deg, var(--accent-vector), var(--accent-raster), var(--accent-3d));
+            border-radius: 50%; filter: blur(4px); box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            animation: float-bg 20s infinite linear;
+        }
+
+        @keyframes float-bg {
+            0% { transform: translateY(105vh) rotate(0deg) scale(0.5); opacity: 0; }
+            15% { opacity: 0.7; }
+            85% { opacity: 0.7; }
+            100% { transform: translateY(-10vh) rotate(360deg) scale(1.8); opacity: 0; }
+        }
+
+        header { text-align: center; margin-bottom: 35px; z-index: 10; }
+        header h1 {
+            font-size: 3rem; font-weight: 900;
+            background: linear-gradient(to right, var(--accent-vector), #a855f7, var(--accent-raster));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 10px; letter-spacing: -0.5px;
+            filter: drop-shadow(0 2px 10px rgba(168, 85, 247, 0.3));
+        }
+        header p { color: var(--text-muted); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; }
+
+        .main-layout {
+            max-width: 1300px; width: 100%; display: grid; grid-template-columns: 1fr 1.3fr; gap: 35px; z-index: 10; margin-bottom: 35px;
+        }
+
+        @media (max-width: 950px) { .main-layout { grid-template-columns: 1fr; } }
+
+        .glass-panel {
+            background: var(--panel-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border); border-radius: 24px; padding: 35px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theory-title {
+            font-size: 1.8rem; margin-bottom: 25px; display: flex; align-items: center; gap: 12px; color: #fff;
+            text-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+        .theory-title::before {
+            content: ''; display: inline-block; width: 6px; height: 28px;
+            background: linear-gradient(to bottom, var(--accent-vector), var(--accent-raster)); border-radius: 4px;
+        }
+
+        .theory-text { font-size: 1.15rem; line-height: 1.8; color: #e2e8f0; }
+        .theory-text p { margin-bottom: 20px; }
+        
+        .badge { padding: 4px 10px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; }
+        .badge-plus { background: rgba(0, 255, 102, 0.15); color: var(--accent-3d); border: 1px solid rgba(0, 255, 102, 0.3); }
+        .badge-minus { background: rgba(255, 0, 85, 0.15); color: var(--accent-raster); border: 1px solid rgba(255, 0, 85, 0.3); }
+
+        .canvas-container { display: flex; flex-direction: column; gap: 25px; }
+        .viewport {
+            width: 100%; height: 420px; background: #040814; border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        .viewport-stats {
+            position: absolute; bottom: 15px; left: 15px; font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem; font-weight: bold; color: #00ffea; background: rgba(0, 0, 0, 0.7);
+            padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.2); letter-spacing: 1px; pointer-events: none;
+        }
+
+        .placeholder-info { text-align: center; color: #64748b; font-size: 1.2rem; font-weight: 500; }
+
+        .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        
+        .btn-action {
+            padding: 16px 10px; font-size: 1.05rem; font-weight: 700; color: #fff;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-action:hover { transform: translateY(-3px); color: #fff; }
+        .btn-action:active { transform: translateY(-1px); }
+
+        .btn-vector:hover, .btn-vector.active { background: rgba(0, 242, 255, 0.15); border-color: var(--accent-vector); box-shadow: 0 0 25px rgba(0,242,255,0.4); color: var(--accent-vector); }
+        .btn-raster:hover, .btn-raster.active { background: rgba(255, 0, 85, 0.15); border-color: var(--accent-raster); box-shadow: 0 0 25px rgba(255,0,85,0.4); color: var(--accent-raster); }
+        .btn-3d:hover, .btn-3d.active { background: rgba(0, 255, 102, 0.15); border-color: var(--accent-3d); box-shadow: 0 0 25px rgba(0,255,102,0.4); color: var(--accent-3d); }
+        
+        .btn-tool { background: rgba(112, 0, 255, 0.2); border-color: rgba(112, 0, 255, 0.4); }
+        .btn-tool:hover { background: var(--accent-tools); box-shadow: 0 0 20px rgba(112, 0, 255, 0.5); }
+        .btn-reset { background: rgba(255, 0, 85, 0.05); border-color: rgba(255,0,85,0.2); color: #ff457d; }
+        .btn-reset:hover { background: var(--accent-raster); color: #fff; box-shadow: 0 0 20px rgba(255, 0, 85, 0.4); }
+
+        .panel-glow-vector { border-color: rgba(0, 242, 255, 0.4); box-shadow: 0 20px 50px rgba(0, 242, 255, 0.15); }
+        .panel-glow-raster { border-color: rgba(255, 0, 85, 0.4); box-shadow: 0 20px 50px rgba(255, 0, 85, 0.15); }
+        .panel-glow-3d { border-color: rgba(0, 255, 102, 0.4); box-shadow: 0 20px 50px rgba(0, 255, 102, 0.15); }
+
+        .graphic-element { position: absolute; transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .type-vector { width: 140px; height: 140px; background: var(--accent-vector); clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); filter: drop-shadow(0 0 15px rgba(0, 242, 255, 0.6)); }
+        .type-raster { width: 140px; height: 140px; background-image: url('https://picsum.photos/200'); background-size: cover; border: 4px solid #fff; box-shadow: 0 0 25px rgba(255, 255, 255, 0.5); }
+        .type-3d { width: 120px; height: 120px; transform-style: preserve-3d; transform: rotateX(-20deg) rotateY(25deg); transition: transform 0.5s ease; }
+        
+        .cube-face { position: absolute; width: 120px; height: 120px; background: rgba(0, 255, 102, 0.6); border: 2px solid #fff; box-shadow: inset 0 0 15px rgba(255,255,255,0.3); }
+        .face-front  { transform: translateZ(60px); background: rgba(0, 255, 102, 0.75); }
+        .face-back   { transform: rotateY(180deg) translateZ(60px); }
+        .face-right  { transform: rotateY(90deg) translateZ(60px); background: rgba(0, 200, 80, 0.75); }
+        .face-left   { transform: rotateY(-90deg) translateZ(60px); }
+        .face-top    { transform: rotateX(90deg) translateZ(60px); background: rgba(50, 255, 150, 0.75); }
+        .face-bottom { transform: rotateX(-90deg) translateZ(60px); }
+
+        .vector-mod { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); background: #a855f7; transform: scale(1.3); filter: drop-shadow(0 0 25px #a855f7); }
+        .raster-mod { transform: scale(2.5); image-rendering: pixelated; }
+        .cube-mod { transform: rotateX(45deg) rotateY(180deg) rotateZ(45deg) scale(1.2) !important; }
+
+        .animate-loop-vector { animation: vector-pulse 2s infinite ease-in-out; }
+        .animate-loop-raster { animation: raster-shake 0.4s infinite linear; }
+        .animate-loop-3d { animation: cube-spin 5s infinite linear !important; }
+
+        @keyframes vector-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+        @keyframes raster-shake { 0% { transform: translate(2px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(2px, 1px); } }
+        @keyframes cube-spin { 0% { transform: rotateX(0deg) rotateY(0deg); } 100% { transform: rotateX(360deg) rotateY(360deg); } }
+
+        .textbook-container { max-width: 1300px; width: 100%; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
+        
+        .lecture-accordion {
+            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden;
+            background: rgba(15, 23, 42, 0.4); transition: all 0.3s ease;
+        }
+        
+        .accordion-header {
+            padding: 20px 25px; font-size: 1.3rem; font-weight: 700; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            user-select: none; transition: background 0.2s;
+        }
+        .accordion-header:hover { background: rgba(255,255,255,0.03); }
+        .accordion-icon { transition: transform 0.3s ease; font-size: 1.1rem; color: var(--text-muted); }
+
+        .accordion-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0, 1, 0, 1);
+            padding: 0 25px; font-size: 1.15rem; line-height: 1.8; color: #cbd5e1;
+        }
+
+        .accordion-open .accordion-content { max-height: 1200px; padding-bottom: 25px; }
+        .accordion-open .accordion-icon { transform: rotate(180deg); color: #fff; }
+        .accordion-open { border-color: rgba(255,255,255,0.2); background: rgba(15, 23, 42, 0.7); }
+
+        .vector-color { color: var(--accent-vector); }
+        .raster-color { color: var(--accent-raster); }
+        .threed-color { color: var(--accent-3d); }
+
+        .accordion-content h3 { font-size: 1.3rem; margin: 20px 0 10px 0; text-transform: uppercase; }
+        .accordion-content ul { margin-left: 25px; margin-bottom: 15px; }
+        .accordion-content li { margin-bottom: 8px; }
+
+        .table-wrapper { overflow-x: auto; margin-top: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        table { width: 100%; border-collapse: collapse; text-align: left; background: rgba(4, 8, 20, 0.5); font-size: 1.05rem; }
+        th, td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        th { background: rgba(255,255,255,0.04); color: #fff; font-weight: 700; font-size: 0.9rem; letter-spacing: 1px; }
+
+        .infobox {
+            background: rgba(112, 0, 255, 0.12); border-left: 4px solid var(--accent-tools);
+            padding: 18px; border-radius: 0 12px 12px 0; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="ps4-ambient" src="https://assets.mixkit.co/active_storage/sfx/123/123-200.wav" preload="auto"></audio>
+    <audio id="ps4-bg" src="https://ia600201.us.archive.org/24/items/playstation-4-home-screen-ambient-sound/Playstation%204%20Home%20Screen%20Ambient%20Sound.mp3" loop></audio>
+
+    <div class="bg-particles" id="particles-container"></div>
+
+    <header>
+        <h1>Цифровые Графические Объекты</h1>
+        <p>Мультимедийная интерактивная лекция</p>
+    </header>
+
+    <div class="main-layout">
+        <div class="glass-panel" id="theory-card">
+            <h2 class="theory-title" id="t-title">Лабораторный модуль</h2>
+            <div class="theory-text" id="t-text">
+                <p>Все, что отображается на экранах современных устройств — это цифровые графические объекты.</p>
+                <p><b>Инструкция:</b> Выберите тип графики кнопками («Вектор», «Растры», «3D Объект»). Затем протестируйте их поведение кнопками «Модификация» и «Анимация».</p>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <div class="glass-panel viewport" id="canvas-box">
+                <div class="placeholder-info" id="v-placeholder">Стенд готов к работе. Запустите объект...</div>
+                <div class="viewport-stats" id="v-stats">ENGINE: STANDBY | FPS: 0</div>
+            </div>
+
+            <div class="controls-grid">
+                <button class="btn-action btn-vector" onclick="loadElement('vector', this)">Вектор</button>
+                <button class="btn-action btn-raster" onclick="loadElement('raster', this)">Растры</button>
+                <button class="btn-action btn-3d" onclick="loadElement('3d', this)">3D Объект</button>
+                
+                <button class="btn-action btn-tool" onclick="modifyElement()">Модификация</button>
+                <button class="btn-action btn-tool" onclick="animateElement()">Анимация</button>
+                <button class="btn-action btn-reset" onclick="clearCanvas()">Сбросить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="textbook-container">
+        <div class="lecture-accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <span>📖 Базовые виды графических объектов (Теория)</span>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="accordion-content">
+                <h3 class="vector-color">1. Векторные объекты (Математика)</h3>
+                <p>Основаны на формулах геометрических примитивов. Видеокарта рассчитывает геометрию объекта с нуля при любом изменении.</p>
+                <ul>
+                    <li><b>Плюс:</b> Бесконечный зум без потери четкости (покажите кнопкой «Модификация»).</li>
+                    <li><b>Минус:</b> Невозможно передать сложные живые текстуры или фотографии.</li>
+                </ul>
+                <h3 class="raster-color">2. Растровые объекты (Матрица пикселей)</h3>
+                <p>Изображение разбито на сетку микроэлементов — <b>пикселей</b>, где каждый хранит код своего цвета.</p>
+                <ul>
+                    <li><b>Плюс:</b> Идеальный фотореализм и передача полутонов.</li>
+                    <li><b>Минус:</b> Разрушение при зуме (эффект пикселизации, продемонстрируйте на холсте).</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="lecture-accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <span>⚡ Дополнительный материал: Сжатие, SVG и Трассировка</span>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="accordion-content">
+                <h3 class="vector-color">Битва в реальной жизни: SVG против PNG/JPEG</h3>
+                <p>Иконки интерфейсов на смартфонах и консолях (включая саму PS4) — векторные (формат <b>SVG</b>). Это позволяет им выглядеть кристально чёткими как на маленьких экранах, так и на огромных 4K телевизорах, занимая всего несколько килобайт памяти.</p>
+            </div>
+        </div>
+
+        <div class="lecture-accordion">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <span>📊 Шпаргалка: Сравнительная таблица</span>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="accordion-content">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Параметр</th>
+                                <th class="vector-color">Вектор</th>
+                                <th class="raster-color">Растр</th>
+                                <th class="threed-color">3D Графика</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>Элемент структуры</b></td>
+                                <td>Формулы / Линии</td>
+                                <td>Пиксели (Точки)</td>
+                                <td>Полигоны (Грани)</td>
+                            </tr>
+                            <tr>
+                                <td><b>Масштабирование</b></td>
+                                <td>Идеальное</td>
+                                <td>Пикселизация (Размытие)</td>
+                                <td>Идеальный каркас</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleAccordion(headerElement) {
+            headerElement.parentElement.classList.toggle('accordion-open');
+        }
+
+        function createBackground() {
+            const container = document.getElementById('particles-container');
+            const particleCount = 25;
+            for(let i = 0; i < particleCount; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                let size = Math.random() * 45 + 15;
+                p.style.width = `${size}px`; p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}vw`;
+                p.style.animationDelay = `${Math.random() * 18}s`;
+                p.style.animationDuration = `${Math.random() * 12 + 12}s`;
+                container.appendChild(p);
+            }
+        }
+        createBackground();
+
+        const canvas = document.getElementById('canvas-box');
+        const theoryCard = document.getElementById('theory-card');
+        const placeholder = document.getElementById('v-placeholder');
+        const stats = document.getElementById('v-stats');
+        const tTitle = document.getElementById('t-title');
+        const tText = document.getElementById('t-text');
+
+        let activeObj = null; let activeType = ''; let isModified = false; let isAnimated = false; let statsInterval = null;
+
+        const database = {
+            vector: {
+                title: "Векторный объект (Математика)",
+                text: `<p><b>Векторная графика</b> строится на основе формул. Видеокарта рассчитывает геометрию объекта в реальном времени.</p>
+                       <p><b>Демонстрация:</b> Нажмите <i>Модификацию</i> — мы перепишем формулу контура, границы останутся идеально острыми.</p>`
+            },
+            raster: {
+                title: "Растровый объект (Пиксели)",
+                text: `<p><b>Растровая графика</b> — это жесткая матрица цветных точек — пикселей.</p>
+                       <p><b>Демонстрация:</b> Нажмите <i>Модификацию</i>. Мы увеличим объект, и станет заметна потеря четкости — пикселизация.</p>`
+            },
+            '3d': {
+                title: "3D Модель (Объемная сетка)",
+                text: `<p><b>Трехмерный объект</b> существует по трем осям координат: X, Y и Z и собирается из полигонов.</p>
+                       <p><b>Демонстрация:</b> Активируйте <i>Анимация</i>. Видеокарта (GPU) начнет непрерывно рассчитывать вращение куба в пространстве.</p>`
+            }
+        };
+
+        // ФУНКЦИЯ ДЛЯ ПЛАВНОГО ЗАПУСКА ЗВУКОВОЙ СИСТЕМЫ PS4
+        function playPlayStationSounds() {
+            const ambientIn = document.getElementById('ps4-ambient');
+            const bgMusic = document.getElementById('ps4-bg');
+
+            // Проигрываем короткий приветственный «блик» (звук выбора)
+            if (ambientIn) {
+                ambientIn.volume = 0.4;
+                ambientIn.currentTime = 0;
+                ambientIn.play().catch(e => console.log("Ждем первого клика"));
+            }
+
+            // Запускаем бесконечную фоновую музыку главного меню PS4 на комфортной громкости
+            if (bgMusic && bgMusic.paused) {
+                bgMusic.volume = 0.15; // 15% громкости, чтобы не мешать голосу
+                bgMusic.play().catch(e => console.log("Браузер заблокировал поток"));
+            }
+        }
+
+        function loadElement(type, btnElement) {
+            clearCanvas(true);
+            
+            // Включаем звуковую дорожку PS4 по первому клику на любой объект
+            playPlayStationSounds();
+
+            document.querySelectorAll('.controls-grid .btn-action').forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            placeholder.style.display = 'none';
+            activeType = type;
+            theoryCard.className = `glass-panel panel-glow-${type}`;
+
+            activeObj = document.createElement('div');
+            activeObj.classList.add('graphic-element');
+
+            if (type === 'vector') { activeObj.classList.add('type-vector'); } 
+            else if (type === 'raster') { activeObj.classList.add('type-raster'); } 
+            else if (type === '3d') {
+                activeObj.classList.add('type-3d');
+                const faces = ['front', 'back', 'right', 'left', 'top', 'bottom'];
+                faces.forEach(face => {
+                    const fDiv = document.createElement('div'); fDiv.classList.add('cube-face', `face-${face}`); activeObj.appendChild(fDiv);
+                });
+            }
+
+            canvas.appendChild(activeObj);
+            tTitle.innerText = database[type].title;
+            tText.innerHTML = database[type].text;
+            startLiveStats(type);
+        }
+
+        function modifyElement() {
+            if (!activeObj) return alert('Выберите объект!');
+            playPlayStationSounds(); // Повторный отклик звука при действии
+            isModified = !isModified;
+            if (activeType === 'vector') { activeObj.classList.toggle('vector-mod', isModified); } 
+            else if (activeType === 'raster') { activeObj.classList.toggle('raster-mod', isModified); } 
+            else if (activeType === '3d') { activeObj.classList.toggle('cube-mod', isModified); }
+            updateStatsText();
+        }
+
+        function animateElement() {
+            if (!activeObj) return alert('Объект не выбран!');
+            playPlayStationSounds();
+            isAnimated = !isAnimated;
+            if (activeType === 'vector') { activeObj.classList.toggle('animate-loop-vector', isAnimated); } 
+            else if (activeType === 'raster') { activeObj.classList.toggle('animate-loop-raster', isAnimated); } 
+            else if (activeType === '3d') { activeObj.classList.toggle('animate-loop-3d', isAnimated); }
+            updateStatsText();
+        }
+
+        function startLiveStats(type) {
+            if(statsInterval) clearInterval(statsInterval);
+            statsInterval = setInterval(() => {
+                let rMeta = Math.floor(Math.random() * 400 + 100);
+                if(type === 'vector') { stats.innerText = `ENGINE: VECTOR_CORE | PATH_MATH: OK | INTEGRITY: 100%`; stats.style.color = 'var(--accent-vector)'; } 
+                else if(type === 'raster') { stats.innerText = `ENGINE: RASTER_MATRIX | RES: 200x200 | CACHE: ${rMeta}kb`; stats.style.color = 'var(--accent-raster)'; } 
+                else if(type === '3d') { stats.innerText = `ENGINE: GPU_WEBGL_3D | POLYGONS: 6 | REALTIME_FPS: 60.${Math.floor(Math.random()*9)}`; stats.style.color = 'var(--accent-3d)'; }
+            }, 300);
+        }
+
+        function updateStatsText() {
+            if(!activeObj) return;
+            stats.innerText = `STATE_CHANGE: MOD=${isModified} | ANIM=${isAnimated}`;
+            stats.style.color = '#fff';
+        }
+
+        function clearCanvas(soft = false) {
+            if(activeObj) activeObj.remove();
+            activeObj = null; isModified = false; isAnimated = false; activeType = '';
+            if(statsInterval) clearInterval(statsInterval);
+
+            if(!soft) {
+                placeholder.style.display = 'block'; theoryCard.className = 'glass-panel';
+                document.querySelectorAll('.controls-grid .btn-action').forEach(b => b.classList.remove('active'));
+                tTitle.innerText = "Лабораторный модуль";
+                tText.innerHTML = `<p>Все, что отображается на экранах современных устройств — это цифровые графические объекты.</p>
+                                   <p><b>Инструкция:</b> Переключайте типы графики кнопками («Вектор», «Растры», «3D Объект»). Затем протестируйте их поведение кнопками «Модификация» и «Анимация».</p>`;
+                stats.innerText = `ENGINE: STANDBY | FPS: 0`; stats.style.color = '#00f2ff';
+            }
+        }
+    </script>
+</body>
+</html>
